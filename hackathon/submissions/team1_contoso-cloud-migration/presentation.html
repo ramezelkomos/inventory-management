@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contoso Cloud Migration — Claude Code Hackathon</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080d1a;
+      --surface:   #0f172a;
+      --surface2:  #1e293b;
+      --border:    #263352;
+      --blue:      #3b82f6;
+      --blue-dim:  #1d3a6e;
+      --orange:    #f97316;
+      --purple:    #a78bfa;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --yellow:    #facc15;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --subtle:    #94a3b8;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ── Slide container ─────────────────────────────── */
+    .deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 3rem 4rem;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: all;
+    }
+    .slide.exit {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ── Progress bar ────────────────────────────────── */
+    .progress {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+      transition: width 0.35s ease;
+      z-index: 100;
+    }
+
+    /* ── Nav dots ────────────────────────────────────── */
+    .dots {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .dot.active { background: var(--blue); transform: scale(1.4); }
+
+    /* ── Slide counter ───────────────────────────────── */
+    .counter {
+      position: fixed;
+      bottom: 1.4rem;
+      right: 2rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      z-index: 100;
+    }
+
+    /* ── Nav arrows ──────────────────────────────────── */
+    .nav-btn {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(30,41,59,0.7);
+      border: 1px solid var(--border);
+      color: var(--subtle);
+      width: 2.5rem; height: 2.5rem;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      z-index: 100;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-btn:hover { background: var(--surface2); color: var(--text); }
+    .nav-btn.prev { left: 1rem; }
+    .nav-btn.next { right: 1rem; }
+
+    /* ── Typography helpers ──────────────────────────── */
+    .slide-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--blue);
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    h1 { font-size: 3rem; font-weight: 800; line-height: 1.1; }
+    h2 { font-size: 1.75rem; font-weight: 700; color: var(--text); }
+    h3 { font-size: 1rem; font-weight: 700; color: var(--text); }
+    p  { font-size: 0.9rem; color: var(--subtle); line-height: 1.7; }
+
+    .accent { color: var(--orange); }
+    .blue   { color: var(--blue); }
+    .purple { color: var(--purple); }
+    .green  { color: var(--green); }
+    .yellow { color: var(--yellow); }
+
+    /* ── Layout helpers ──────────────────────────────── */
+    .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex: 1; align-items: start; }
+    .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+    .cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .flex-1 { flex: 1; }
+    .mt-sm  { margin-top: 0.75rem; }
+    .mt-md  { margin-top: 1.25rem; }
+    .mt-lg  { margin-top: 2rem; }
+
+    /* ── Card ────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .card-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--blue);
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    /* ── Badge / tag ─────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .badge-blue   { border-color: var(--blue);   color: var(--blue);   background: rgba(59,130,246,0.1); }
+    .badge-orange { border-color: var(--orange);  color: var(--orange); background: rgba(249,115,22,0.1); }
+    .badge-green  { border-color: var(--green);   color: var(--green);  background: rgba(34,197,94,0.1); }
+    .badge-purple { border-color: var(--purple);  color: var(--purple); background: rgba(167,139,250,0.1); }
+    .badge-yellow { border-color: var(--yellow);  color: var(--yellow); background: rgba(250,204,21,0.1); }
+
+    /* ── Step / timeline ─────────────────────────────── */
+    .step {
+      display: flex;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 1.75rem; height: 1.75rem;
+      border-radius: 50%;
+      background: var(--blue-dim);
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .step-body h3 { font-size: 0.875rem; margin-bottom: 0.2rem; }
+    .step-body p  { font-size: 0.78rem; }
+
+    /* ── Finding card (warning) ──────────────────────── */
+    .finding {
+      background: rgba(249,115,22,0.07);
+      border: 1px solid rgba(249,115,22,0.3);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 8px 8px 0;
+      padding: 0.85rem 1rem;
+    }
+    .finding h3 { color: var(--orange); font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .finding p  { font-size: 0.78rem; }
+
+    /* ── Claude moment ───────────────────────────────── */
+    .moment {
+      background: rgba(167,139,250,0.07);
+      border: 1px solid rgba(167,139,250,0.25);
+      border-left: 3px solid var(--purple);
+      border-radius: 0 8px 8px 0;
+      padding: 0.85rem 1rem;
+    }
+    .moment h3 { color: var(--purple); font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .moment p  { font-size: 0.78rem; }
+
+    /* ── Code block ──────────────────────────────────── */
+    .code {
+      background: #010810;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.75rem;
+      line-height: 1.7;
+      color: #a8d8ea;
+      overflow: hidden;
+    }
+    .code .kw  { color: #c792ea; }
+    .code .str { color: #c3e88d; }
+    .code .cmt { color: #546e7a; font-style: italic; }
+    .code .fn  { color: #82aaff; }
+    .code .var { color: #f07178; }
+
+    /* ── Architecture boxes ──────────────────────────── */
+    .arch-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .arch-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      text-align: center;
+      min-width: 90px;
+    }
+    .arch-box .icon { font-size: 1.4rem; display: block; }
+    .arch-box .lbl  { font-size: 0.72rem; font-weight: 600; color: var(--text); display: block; margin-top: 0.2rem; }
+    .arch-box .sub  { font-size: 0.62rem; color: var(--muted); display: block; }
+    .arch-arrow { color: var(--blue); font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ── Score table ─────────────────────────────────── */
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+    }
+    .score-row:last-child { border-bottom: none; }
+    .score-label { flex: 1; color: var(--subtle); }
+    .score-bar-wrap { width: 120px; height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+    .score-bar { height: 100%; border-radius: 99px; }
+    .score-val { width: 30px; text-align: right; font-weight: 700; }
+
+    /* ── Outcome stat ────────────────────────────────── */
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-num { font-size: 2.25rem; font-weight: 800; line-height: 1; }
+    .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 0.4rem; }
+
+    /* ── Challenge status table ──────────────────────── */
+    .ch-row {
+      display: grid;
+      grid-template-columns: 1.5rem 1fr auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+    }
+    .ch-row:nth-child(odd) { background: rgba(255,255,255,0.02); }
+    .ch-num { color: var(--muted); font-size: 0.72rem; }
+    .ch-name { color: var(--text); }
+    .status-done    { color: var(--green);  font-weight: 700; font-size: 0.75rem; }
+    .status-partial { color: var(--yellow); font-weight: 700; font-size: 0.75rem; }
+    .status-skip    { color: var(--muted);  font-size: 0.75rem; }
+
+    /* ── Slide-specific overrides ────────────────────── */
+
+    /* Slide 1 — Hero */
+    #s1 { justify-content: center; }
+    #s1 .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 99px;
+      padding: 0.3rem 1rem;
+      font-size: 0.75rem;
+      color: var(--blue);
+      margin-bottom: 1.5rem;
+    }
+    #s1 h1 { font-size: 3.5rem; }
+    #s1 .tagline { font-size: 1.1rem; color: var(--subtle); margin-top: 1rem; max-width: 600px; }
+    #s1 .meta { margin-top: 2rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    #s1 .meta-item { font-size: 0.8rem; color: var(--muted); }
+    #s1 .meta-item span { color: var(--text); font-weight: 600; }
+
+    /* Slide 2 — The Brief */
+    #s2 .workload-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    #s2 .workload-card h3 { font-size: 0.95rem; margin-bottom: 0.4rem; }
+    #s2 .workload-card .spec { font-size: 0.75rem; color: var(--muted); line-height: 1.8; }
+    #s2 .tension {
+      background: rgba(239,68,68,0.07);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    /* Slide 8 — Outro */
+    #s8 { justify-content: center; align-items: center; text-align: center; }
+    #s8 h1 { font-size: 2.75rem; }
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 1 — Hero
+  ───────────────────────────────────────────────────── -->
+  <div class="slide active" id="s1">
+    <div class="hero-tag">
+      <span>●</span> APAC Claude Code Workshop — Hackathon
+    </div>
+    <h1>
+      Contoso Cloud Migration<br/>
+      <span class="accent">with Claude Code</span>
+    </h1>
+    <p class="tagline">
+      How one engineer used Claude Code to play six roles —
+      PM, Architect, Dev, Data Eng, Infra, Tester —
+      and produce a production-grade cloud migration package in 60 minutes.
+    </p>
+    <div class="meta">
+      <div class="meta-item">Scenario <span>2 — Cloud Migration</span></div>
+      <div class="meta-item">Team <span>1</span></div>
+      <div class="meta-item">Duration <span>60 minutes</span></div>
+      <div class="meta-item">Team size <span>1 engineer</span></div>
+      <div class="meta-item">Challenges completed <span>5 of 10</span></div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 2 — The Scenario
+  ───────────────────────────────────────────────────── -->
+  <div class="slide" id="s2">
+    <div class="slide-label">The Brief</div>
+    <h2>Contoso Financial — Three On-Prem Workloads</h2>
+    <p class="mt-sm">CFO signed the cloud contract. CTO wants cloud-native. They disagree. The clock is running.</p>
+
+    <div class="cols-3 mt-md">
+      <div class="workload-card">
+        <h3>🌐 Portal</h3>
+        <div class="spec">
+          Customer-facing web app<br/>
+          .NET 4.7.2 / IIS 10<br/>
+          Windows Server 2016<br/>
+          Manual xcopy deployment<br/>
+          In-process sessions
+        </div>
+      </div>
+      <div class="workload-card">
+        <h3>⚙️ Recon</h3>
+        <div class="spec">
+          Nightly batch reconciliation<br/>
+          Python 3.8 / cron 2am<br/>
+          ~2M transactions/night<br/>
+          Runtime: 4 min → 47 min<br/>
+          No retry logic
+        </div>
+      </div>
+      <div class="workload-card">
+        <h3>🗄️ ReportDB</h3>
+        <div class="spec">
+          Shared reporting database<br/>
+          SQL Server 2017 Enterprise<br/>
+          380 GB data<br/>
+          5 teams query directly<br/>
+          Restore: <span style="color:var(--red)">never tested</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tension">
+      <h3 style="font-size:0.85rem; color:var(--red); margin-bottom:0.4rem;">The Tension</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; font-size:0.82rem; color:var(--subtle);">
+        <div>💰 <strong style="color:var(--text)">CFO</strong> — "We signed. 45-day cutover. No slippage."</div>
+        <div>🏗️ <strong style="color:var(--text)">CTO</strong> — "Cloud-native, not lift-and-shift. No lifting dead weight."</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 3 — The Plan: How We Used Claude
+  ───────────────────────────────────────────────────── -->
+  <div class="slide" id="s3">
+    <div class="slide-label">The Approach</div>
+    <h2>How We Used Claude Code — The 60-Minute Plan</h2>
+
+    <div class="cols-2 mt-md flex-1">
+      <div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Challenge 1 — The Memo <span class="badge badge-blue" style="margin-left:0.4rem;">5 min</span></h3>
+            <p>Prompted Claude to pick a side and make the case. Gave it the scenario constraints and said "no hedging." Claude wrote a one-page ADR with a hard recommendation and named every risk we were accepting.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Challenge 2 — The Discovery <span class="badge badge-blue" style="margin-left:0.4rem;">10 min</span></h3>
+            <p>Asked Claude to "make it messy — find things nobody documented." It invented three realistic hidden dependencies that would break a naive migration, then generated a full ASCII dependency map.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3>Challenge 3 — The Options <span class="badge badge-blue" style="margin-left:0.4rem;">8 min</span></h3>
+            <p>Three architectures — EC2 lift, ECS+RDS, full serverless — scored on cost, risk, speed, operability. Claude referenced real AWS service names and made a clear recommendation.</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h3>Challenge 4 — The Container <span class="badge badge-blue" style="margin-left:0.4rem;">15 min</span></h3>
+            <p>Claude containerised the <em>actual running app in this repo</em> — not a fictional example. Multi-stage build, non-root user, health checks, docker-compose, and ECS deployment path — all in one pass.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h3>Challenge 6 — The Foundation (IaC) <span class="badge badge-blue" style="margin-left:0.4rem;">12 min</span></h3>
+            <p>Terraform for the full AWS target: VPC, ECS, RDS, ElastiCache, S3, ALB, Lambda, IAM, Secrets Manager. Crucially — the undocumented findings from Discovery appear as explicit TODO gaps in the IaC.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <h3>Submission Files <span class="badge badge-blue" style="margin-left:0.4rem;">10 min</span></h3>
+            <p>README, CLAUDE.md, and this presentation — all generated by Claude Code with the full context of everything built.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 4 — The Discovery (the messy part)
+  ───────────────────────────────────────────────────── -->
+  <div class="slide" id="s4">
+    <div class="slide-label">Challenge 2 — Discovery</div>
+    <h2>The Things Nobody Documented</h2>
+    <p class="mt-sm" style="font-size:0.85rem;">Claude was prompted to generate a realistic on-prem state — then find the dependencies that would break a cloud migration. These three findings shaped every decision after.</p>
+
+    <div class="cols-3 mt-md">
+      <div class="finding">
+        <h3>🔒 FinSecLib.dll — UNC Lock File</h3>
+        <p>PCI tokenisation binary. No source. No vendor. Writes lock files to <code style="color:var(--orange)">\\fileserver01\finlib-locks\</code> — a UNC share not in any architecture doc. Silent failure if share unavailable.</p>
+        <div style="margin-top:0.6rem;"><span class="badge badge-orange">BLOCKS MIGRATION</span> <span class="badge badge-blue" style="margin-left:0.3rem;">JIRA CLOUD-17</span></div>
+      </div>
+      <div class="finding">
+        <h3>👻 Ghost VM — 172.16.4.42</h3>
+        <p>Decommissioned server, still running. Recon calls it on every job: <code style="color:var(--orange)">requests.get("http://172.16.4.42/api/validate")</code>. Code comment: <em># TODO: remove after Dec 2022</em>. Never removed.</p>
+        <div style="margin-top:0.6rem;"><span class="badge badge-orange">BLOCKS MIGRATION</span> <span class="badge badge-blue" style="margin-left:0.3rem;">JIRA CLOUD-33</span></div>
+      </div>
+      <div class="finding">
+        <h3>🔗 ReportDB Linked Server</h3>
+        <p>SQL Server linked server → <code style="color:var(--orange)">creditcheck.ext.contoso.com:1433</code>. External credit bureau. Called by SQL Agent job. Cannot be replicated in RDS. Firewall + DNS gap in cloud.</p>
+        <div style="margin-top:0.6rem;"><span class="badge badge-orange">BLOCKS MIGRATION</span> <span class="badge badge-blue" style="margin-left:0.3rem;">JIRA CLOUD-42</span></div>
+      </div>
+    </div>
+
+    <div class="card mt-md">
+      <div class="card-title">The Dependency Map Claude Generated (ASCII — from workload descriptions in one pass)</div>
+      <div class="code" style="margin-top:0.5rem; font-size:0.7rem;">
+Portal (172.16.4.10)<br/>
+  ├── SQL Server (172.16.4.33)          <span class="cmt">[hardcoded in web.config]</span><br/>
+  └── fileserver01 UNC (172.16.4.20)   <span class="cmt">← UNDOCUMENTED (FinSecLib lock file)</span><br/>
+<br/>
+Recon (172.16.4.15)<br/>
+  ├── NFS share on fileserver01 (172.16.4.20)<br/>
+  ├── SQL Server (172.16.4.33)          <span class="cmt">[writes recon_results]</span><br/>
+  └── Ghost VM (172.16.4.42)            <span class="cmt">← UNDOCUMENTED (hardcoded validation call)</span><br/>
+<br/>
+ReportDB (172.16.4.33)<br/>
+  └── creditcheck.ext.contoso.com:1433  <span class="cmt">← UNDOCUMENTED (linked server, external)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 5 — Architecture Decision
+  ───────────────────────────────────────────────────── -->
+  <div class="slide" id="s5">
+    <div class="slide-label">Challenge 3 — Target Architecture</div>
+    <h2>Three Options. One Recommendation.</h2>
+
+    <div class="cols-2 mt-md flex-1">
+      <div>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <!-- Option A -->
+          <div class="card" style="border-color:var(--border); opacity:0.7;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <h3 style="font-size:0.9rem;">Option A — EC2 Lift-and-Shift</h3>
+              <span class="badge badge-yellow">14/20</span>
+            </div>
+            <div class="score-row"><span class="score-label">Cost</span><div class="score-bar-wrap"><div class="score-bar" style="width:40%; background:var(--red)"></div></div><span class="score-val" style="color:var(--red)">2</span></div>
+            <div class="score-row"><span class="score-label">Risk</span><div class="score-bar-wrap"><div class="score-bar" style="width:100%; background:var(--green)"></div></div><span class="score-val" style="color:var(--green)">5</span></div>
+            <div class="score-row"><span class="score-label">Speed</span><div class="score-bar-wrap"><div class="score-bar" style="width:100%; background:var(--green)"></div></div><span class="score-val" style="color:var(--green)">5</span></div>
+            <div class="score-row"><span class="score-label">Operability</span><div class="score-bar-wrap"><div class="score-bar" style="width:40%; background:var(--red)"></div></div><span class="score-val" style="color:var(--red)">2</span></div>
+            <p style="font-size:0.72rem; margin-top:0.5rem; color:var(--muted);">Still patching VMs. SQL Server licensing unchanged. No auto-scaling.</p>
+          </div>
+          <!-- Option C -->
+          <div class="card" style="border-color:var(--border); opacity:0.7;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <h3 style="font-size:0.9rem;">Option C — Fully Serverless</h3>
+              <span class="badge badge-yellow">12/20</span>
+            </div>
+            <div class="score-row"><span class="score-label">Cost</span><div class="score-bar-wrap"><div class="score-bar" style="width:100%; background:var(--green)"></div></div><span class="score-val" style="color:var(--green)">5</span></div>
+            <div class="score-row"><span class="score-label">Risk</span><div class="score-bar-wrap"><div class="score-bar" style="width:20%; background:var(--red)"></div></div><span class="score-val" style="color:var(--red)">1</span></div>
+            <div class="score-row"><span class="score-label">Speed</span><div class="score-bar-wrap"><div class="score-bar" style="width:20%; background:var(--red)"></div></div><span class="score-val" style="color:var(--red)">1</span></div>
+            <div class="score-row"><span class="score-label">Operability</span><div class="score-bar-wrap"><div class="score-bar" style="width:100%; background:var(--green)"></div></div><span class="score-val" style="color:var(--green)">5</span></div>
+            <p style="font-size:0.72rem; margin-top:0.5rem; color:var(--muted);">4–6 months. Full .NET rewrite + SQL Server → Aurora migration. Too risky with unknown deps.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <!-- Recommended -->
+        <div class="card" style="border-color:var(--blue); border-width:2px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <h3>✅ Option B — ECS Fargate + RDS</h3>
+            <span class="badge badge-green">15/20 · RECOMMENDED</span>
+          </div>
+          <div class="score-row"><span class="score-label">Cost</span><div class="score-bar-wrap"><div class="score-bar" style="width:80%; background:var(--blue)"></div></div><span class="score-val" style="color:var(--blue)">4</span></div>
+          <div class="score-row"><span class="score-label">Risk</span><div class="score-bar-wrap"><div class="score-bar" style="width:60%; background:var(--blue)"></div></div><span class="score-val" style="color:var(--blue)">3</span></div>
+          <div class="score-row"><span class="score-label">Speed</span><div class="score-bar-wrap"><div class="score-bar" style="width:60%; background:var(--blue)"></div></div><span class="score-val" style="color:var(--blue)">3</span></div>
+          <div class="score-row"><span class="score-label">Operability</span><div class="score-bar-wrap"><div class="score-bar" style="width:100%; background:var(--green)"></div></div><span class="score-val" style="color:var(--green)">5</span></div>
+
+          <div class="arch-row" style="margin-top:1rem; justify-content:center;">
+            <div class="arch-box"><span class="icon">🌐</span><span class="lbl">ALB</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box"><span class="icon">📦</span><span class="lbl">ECS Fargate</span><span class="sub">Portal + Recon</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box"><span class="icon">🗄️</span><span class="lbl">RDS</span><span class="sub">Postgres</span></div>
+          </div>
+          <div class="arch-row" style="margin-top:0.5rem; justify-content:center;">
+            <div class="arch-box"><span class="icon">🪣</span><span class="lbl">S3</span><span class="sub">Recon + locks</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box"><span class="icon">⚡</span><span class="lbl">Lambda</span><span class="sub">S3 trigger</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box"><span class="icon">🔑</span><span class="lbl">Secrets Mgr</span><span class="sub">No hardcoded IPs</span></div>
+          </div>
+          <p style="font-size:0.72rem; margin-top:0.75rem; color:var(--muted);">CFO: 45-day cutover. CTO: containers + event-driven Recon. Both win. ADR-002 findings resolved at infrastructure level.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 6 — The Container (Challenge 4)
+  ───────────────────────────────────────────────────── -->
+  <div class="slide" id="s6">
+    <div class="slide-label">Challenge 4 — The Container</div>
+    <h2>A Real Dockerfile, Not a Fictional One</h2>
+    <p class="mt-sm" style="font-size:0.85rem;">Claude containerised the <strong style="color:var(--text)">actual running app in this repo</strong> — the same inventory management system we've been developing. One prompt, one pass.</p>
+
+    <div class="cols-2 mt-md flex-1">
+      <div>
+        <div class="card-title" style="margin-bottom:0.5rem;">Dockerfile.backend — what Claude produced unprompted</div>
+        <div class="code">
+<span class="cmt"># Stage 1: build dependencies</span><br/>
+<span class="kw">FROM</span> python:3.12-slim <span class="kw">AS</span> <span class="fn">builder</span><br/>
+<span class="kw">COPY</span> server/requirements.txt .<br/>
+<span class="kw">RUN</span> pip install --prefix=/install -r requirements.txt<br/>
+<br/>
+<span class="cmt"># Stage 2: runtime — no build tools in final image</span><br/>
+<span class="kw">FROM</span> python:3.12-slim <span class="kw">AS</span> <span class="fn">runtime</span><br/>
+<span class="cmt"># Non-root user — never run as root in production</span><br/>
+<span class="kw">RUN</span> useradd --create-home appuser<br/>
+<span class="kw">COPY</span> --from=builder /install /usr/local<br/>
+<span class="kw">COPY</span> server/ .<br/>
+<span class="kw">USER</span> appuser<br/>
+<span class="kw">HEALTHCHECK</span> --interval=30s CMD python -c \<br/>
+&nbsp;&nbsp;<span class="str">"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"</span><br/>
+<span class="kw">EXPOSE</span> 8001<br/>
+<span class="kw">CMD</span> [<span class="str">"python"</span>, <span class="str">"main.py"</span>]
+        </div>
+
+        <div class="card mt-sm">
+          <div class="card-title">Local → Cloud parity (docker-compose.yml)</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; font-size:0.75rem; margin-top:0.4rem;">
+            <div style="color:var(--subtle);">MinIO container</div><div style="color:var(--blue);">→ Amazon S3</div>
+            <div style="color:var(--subtle);">Postgres container</div><div style="color:var(--blue);">→ Amazon RDS</div>
+            <div style="color:var(--subtle);">Redis container</div><div style="color:var(--blue);">→ ElastiCache</div>
+            <div style="color:var(--subtle);">ECS (local Docker)</div><div style="color:var(--blue);">→ AWS ECS Fargate</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card-title" style="margin-bottom:0.5rem;">Production patterns Claude applied without being asked</div>
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
+          <div class="moment">
+            <h3>Multi-stage build</h3>
+            <p>Build tools (pip, gcc) never enter the runtime image. Smaller attack surface, smaller image (~50 MB vs ~900 MB).</p>
+          </div>
+          <div class="moment">
+            <h3>Non-root user</h3>
+            <p>Container runs as <code style="color:var(--purple)">appuser</code> — cannot write to host filesystem even if compromised.</p>
+          </div>
+          <div class="moment">
+            <h3>Health check endpoint</h3>
+            <p>ECS marks tasks unhealthy and replaces them automatically. Claude added this before being asked.</p>
+          </div>
+          <div class="moment">
+            <h3>Secrets via Secrets Manager</h3>
+            <p>No secrets in image layers or plaintext env vars. Fixes ADR-002 hardcoded IP findings at the infra level.</p>
+          </div>
+          <div class="moment">
+            <h3>Exact deploy path documented</h3>
+            <p><code style="color:var(--purple)">docker tag → ecr push → ecs update-service</code> — the exact commands to go from local to ECS.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 7 — IaC + Key Claude Moments
+  ───────────────────────────────────────────────────── -->
+  <div class="slide" id="s7">
+    <div class="slide-label">Challenge 6 + Key Insights</div>
+    <h2>IaC That Knows What It Doesn't Know</h2>
+    <p class="mt-sm" style="font-size:0.85rem;">The Terraform references ADR-002 findings as explicit gaps. Decisions and infrastructure stay in sync — the reviewer can trace every TODO back to a discovery finding.</p>
+
+    <div class="cols-2 mt-md flex-1">
+      <div>
+        <div class="card-title" style="margin-bottom:0.5rem;">Terraform gap — traceable to ADR-002</div>
+        <div class="code" style="font-size:0.72rem;">
+<span class="kw">resource</span> <span class="str">"aws_db_instance"</span> <span class="str">"reportdb"</span> {<br/>
+&nbsp;&nbsp;<span class="var">engine</span>                       = <span class="str">"postgres"</span><br/>
+&nbsp;&nbsp;<span class="var">multi_az</span>                     = <span class="kw">true</span><br/>
+&nbsp;&nbsp;<span class="var">manage_master_user_password</span>  = <span class="kw">true</span>  <span class="cmt"># ← unprompted</span><br/>
+&nbsp;&nbsp;<span class="var">deletion_protection</span>          = <span class="kw">true</span>  <span class="cmt"># ← unprompted</span><br/>
+<br/>
+&nbsp;&nbsp;<span class="cmt"># TODO (ADR-002 gap): linked server to</span><br/>
+&nbsp;&nbsp;<span class="cmt"># creditcheck.ext.contoso.com:1433 cannot</span><br/>
+&nbsp;&nbsp;<span class="cmt"># be replicated in RDS. Must become an</span><br/>
+&nbsp;&nbsp;<span class="cmt"># app-layer API call. Track: JIRA CLOUD-42.</span><br/>
+}
+        </div>
+
+        <div class="code mt-sm" style="font-size:0.72rem;">
+<span class="kw">resource</span> <span class="str">"aws_s3_bucket"</span> <span class="str">"finlib_locks"</span> {<br/>
+&nbsp;&nbsp;<span class="cmt"># ADR-002 gap: FinSecLib.dll writes lock</span><br/>
+&nbsp;&nbsp;<span class="cmt"># files to \\fileserver01\finlib-locks\</span><br/>
+&nbsp;&nbsp;<span class="cmt"># This S3 bucket + Mountpoint replaces UNC.</span><br/>
+&nbsp;&nbsp;<span class="cmt"># Binary compat must be validated.</span><br/>
+&nbsp;&nbsp;<span class="cmt"># If fails: Windows containers required.</span><br/>
+&nbsp;&nbsp;<span class="cmt"># Track: JIRA CLOUD-17.</span><br/>
+}
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="card-title">Challenges Completed</div>
+          <div class="ch-row"><span class="ch-num">1</span><span class="ch-name">The Memo</span><span class="status-done">✓ Done</span></div>
+          <div class="ch-row"><span class="ch-num">2</span><span class="ch-name">The Discovery</span><span class="status-done">✓ Done</span></div>
+          <div class="ch-row"><span class="ch-num">3</span><span class="ch-name">The Options</span><span class="status-done">✓ Done</span></div>
+          <div class="ch-row"><span class="ch-num">4</span><span class="ch-name">The Container</span><span class="status-done">✓ Done</span></div>
+          <div class="ch-row"><span class="ch-num">5</span><span class="ch-name">The Rewire</span><span class="status-partial">~ Partial</span></div>
+          <div class="ch-row"><span class="ch-num">6</span><span class="ch-name">The Foundation (IaC)</span><span class="status-done">✓ Done</span></div>
+          <div class="ch-row"><span class="ch-num">7–10</span><span class="ch-name">Tests / Bill / DR / Undo</span><span class="status-skip">Skipped</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">What Surprised Us About Claude Code</div>
+          <p style="font-size:0.78rem; line-height:1.8; color:var(--subtle);">
+            ↳ Added <code style="color:var(--purple)">deletion_protection</code> and <code style="color:var(--purple)">manage_master_user_password</code> to RDS unprompted — production-readiness thinking, not just scaffolding.<br/>
+            ↳ ASCII dependency map from verbal workload descriptions — would have been 30+ min manually.<br/>
+            ↳ Context held across 6 different "roles" without drift — PM memo, architecture ADR, Dockerfile, Terraform all consistent.<br/>
+            ↳ Linked IaC gaps back to discovery JIRA tickets when prompted — no context loss between challenges.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────
+       SLIDE 8 — Outcome
+  ───────────────────────────────────────────────────── -->
+  <div class="slide" id="s8">
+    <div class="slide-label">Outcome</div>
+    <h2 style="text-align:center; margin-bottom:2rem;">
+      60 Minutes. 1 Engineer. <span class="accent">6 Roles.</span>
+    </h2>
+
+    <div class="cols-4">
+      <div class="stat">
+        <div class="stat-num blue">5</div>
+        <div class="stat-label">Challenges completed<br/>(of 10)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num accent">4</div>
+        <div class="stat-label">ADRs written<br/>(decisions documented)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num purple">3</div>
+        <div class="stat-label">Hidden dependencies<br/>found in Discovery</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num green">1</div>
+        <div class="stat-label">docker compose up<br/>that actually runs</div>
+      </div>
+    </div>
+
+    <div class="cols-3 mt-md">
+      <div class="card">
+        <div class="card-title">What Was Delivered</div>
+        <p style="font-size:0.78rem; line-height:1.9; color:var(--subtle);">
+          ✓ Strategy memo with hard call<br/>
+          ✓ Discovery report — 3 blockers named<br/>
+          ✓ 3 architectures scored + recommendation<br/>
+          ✓ Working Dockerfiles (real app)<br/>
+          ✓ docker-compose (local cloud parity)<br/>
+          ✓ Terraform IaC — full AWS target<br/>
+          ✓ ADRs traceable across all artefacts
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-title">What Claude Code Made Possible</div>
+        <p style="font-size:0.78rem; line-height:1.9; color:var(--subtle);">
+          Playing 6 SDLC roles simultaneously<br/>
+          Generating realistic "messy" discovery<br/>
+          Production patterns applied unprompted<br/>
+          IaC gaps traced back to discovery docs<br/>
+          Consistent context across all challenges<br/>
+          Full submission package in 60 minutes
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-title">If We Had Another Hour</div>
+        <p style="font-size:0.78rem; line-height:1.9; color:var(--subtle);">
+          Challenge 7 — validation test suite<br/>
+          Challenge 5 — full Recon event rewrite<br/>
+          Challenge 8 — 12-month cost model<br/>
+          Challenge 10 — rollback plan at 4am<br/>
+          FinSecLib binary compat test<br/>
+          Linked server → API layer scaffold
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:2rem; color:var(--muted); font-size:0.75rem;">
+      APAC Claude Code Workshop &nbsp;·&nbsp; Scenario 2: Cloud Migration &nbsp;·&nbsp; Team 1
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- ── Navigation controls ──────────────────────────── -->
+<button class="nav-btn prev" onclick="navigate(-1)">&#8592;</button>
+<button class="nav-btn next" onclick="navigate(1)">&#8594;</button>
+<div class="dots" id="dots"></div>
+<div class="counter" id="counter"></div>
+<div class="progress" id="progress"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let current  = 0;
+
+  // Build dots
+  const dotsEl = document.getElementById('dots');
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  function goTo(n) {
+    if (n < 0 || n >= total || n === current) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current - (n > current ? 0 : 0)].classList.remove('exit'), 400);
+
+    const prev = current;
+    current = n;
+
+    slides[prev].classList.remove('active');
+    setTimeout(() => slides[prev].classList.remove('exit'), 400);
+
+    slides[current].classList.add('active');
+
+    // Update dots
+    dotsEl.querySelectorAll('.dot').forEach((d, i) =>
+      d.classList.toggle('active', i === current)
+    );
+
+    // Update counter + progress
+    document.getElementById('counter').textContent = `${current + 1} / ${total}`;
+    document.getElementById('progress').style.width =
+      `${((current + 1) / total) * 100}%`;
+  }
+
+  function navigate(dir) { goTo(current + dir); }
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ')  navigate(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     navigate(-1);
+    if (e.key === 'Home') goTo(0);
+    if (e.key === 'End')  goTo(total - 1);
+  });
+
+  // Init counter + progress
+  document.getElementById('counter').textContent = `1 / ${total}`;
+  document.getElementById('progress').style.width = `${(1 / total) * 100}%`;
+</script>
+</body>
+</html>
