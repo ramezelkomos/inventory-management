@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team 1 — Contoso Cloud Migration</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .slide {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #3b82f6;
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    h1 { font-size: 2rem; color: #f97316; font-weight: 700; }
+    .subtitle { color: #94a3b8; margin-top: 0.25rem; font-size: 0.95rem; }
+    .team-badge {
+      background: #1e3a5f;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #93c5fd;
+      text-align: right;
+    }
+
+    /* Grid layout */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+
+    /* Cards */
+    .card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .card h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #3b82f6;
+      margin-bottom: 0.75rem;
+    }
+    .card h3 { font-size: 1rem; color: #f1f5f9; margin-bottom: 0.5rem; }
+    .card p, .card li { font-size: 0.875rem; color: #94a3b8; line-height: 1.6; }
+    .card ul { padding-left: 1.25rem; }
+
+    /* Architecture diagram */
+    .arch {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .arch-box {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+    }
+    .arch-box .icon { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
+    .arch-box .label { color: #cbd5e1; font-weight: 600; display: block; }
+    .arch-box .sub { color: #64748b; font-size: 0.65rem; display: block; margin-top: 0.15rem; }
+    .arch-arrow { text-align: center; color: #3b82f6; font-size: 1.25rem; }
+
+    /* Challenges table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th { background: #1e293b; color: #94a3b8; padding: 0.5rem 0.75rem; text-align: left; font-weight: 600; }
+    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    .done { color: #4ade80; font-weight: 600; }
+    .partial { color: #facc15; font-weight: 600; }
+    .skipped { color: #475569; }
+
+    /* Findings */
+    .finding {
+      background: #1e1a0a;
+      border-left: 3px solid #f97316;
+      padding: 0.75rem 1rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 0.75rem;
+      font-size: 0.82rem;
+    }
+    .finding strong { color: #fb923c; display: block; margin-bottom: 0.25rem; }
+    .finding span { color: #94a3b8; }
+
+    /* Tags */
+    .tag {
+      display: inline-block;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      color: #93c5fd;
+      margin: 2px;
+    }
+    .tag.orange { border-color: #f97316; color: #fb923c; }
+    .tag.green { border-color: #22c55e; color: #4ade80; }
+
+    /* Claude moments */
+    .moment {
+      border-left: 3px solid #a78bfa;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 0.6rem;
+      background: #16103a;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.82rem;
+      color: #c4b5fd;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid #1e293b;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="slide">
+
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>Contoso Cloud Migration</h1>
+        <div class="subtitle">Scenario 2 — "The Lift, the Shift, and no Regrets" &nbsp;|&nbsp; APAC Claude Code Hackathon</div>
+      </div>
+      <div class="team-badge">
+        <div style="font-size:1rem; font-weight:700; color:#f1f5f9;">Team 1</div>
+        <div>Ramez Elkomos</div>
+        <div style="margin-top:0.25rem;">Architect · Dev · PM · Infra</div>
+      </div>
+    </div>
+
+    <!-- Problem + Decision -->
+    <div class="grid-2">
+      <div class="card">
+        <h2>The Problem</h2>
+        <h3>Contoso Financial — 3 On-Prem Workloads</h3>
+        <ul>
+          <li><strong style="color:#f1f5f9;">Portal</strong> — .NET 4.7 / IIS / Windows Server 2016</li>
+          <li><strong style="color:#f1f5f9;">Recon</strong> — Python cron job, 2am nightly, 47-min runtime</li>
+          <li><strong style="color:#f1f5f9;">ReportDB</strong> — SQL Server 2017, 5 teams query directly</li>
+        </ul>
+        <p style="margin-top:0.75rem;">CFO signed the cloud contract. CTO wants cloud-native. They disagree. Clock is running.</p>
+      </div>
+      <div class="card">
+        <h2>The Decision (ADR-001)</h2>
+        <h3>Lift-and-shift first. Optimize in Phase 2.</h3>
+        <p>Refactor-on-the-way-in was rejected. Discovery (ADR-002) found three undocumented dependencies that would have broken a naive migration. With unknown blast radius, the only safe play is a tested baseline in cloud before changing anything.</p>
+        <div style="margin-top:0.75rem;">
+          <span class="tag orange">Phase 1: 45-day cutover</span>
+          <span class="tag orange">Phase 2: day 60+</span>
+          <span class="tag green">CFO wins</span>
+          <span class="tag green">CTO wins</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Undocumented findings -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h2>Discovery Findings — The Things Nobody Documented (ADR-002)</h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-top:0.5rem;">
+        <div class="finding">
+          <strong>FinSecLib.dll — UNC Lock File</strong>
+          <span>PCI tokenisation binary (no source, no vendor) writes lock files to <code>\\fileserver01\finlib-locks\</code>. Silent failure if share is unavailable. Not in any arch doc.</span>
+        </div>
+        <div class="finding">
+          <strong>Ghost VM — 172.16.4.42</strong>
+          <span>Decommissioned VM, still running, called by Recon on every job. <code># TODO: remove after Dec 2022</code> never removed. Response usage unclear.</span>
+        </div>
+        <div class="finding">
+          <strong>ReportDB Linked Server</strong>
+          <span>SQL Server linked server to external credit bureau <code>creditcheck.ext.contoso.com:1433</code>. Runs daily via SQL Agent job. Cannot be replicated in RDS.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Architecture + Challenges -->
+    <div class="grid-2">
+      <div class="card">
+        <h2>Target Architecture — Option B: ECS + RDS (AWS)</h2>
+        <div class="arch" style="margin-top:0.5rem;">
+          <div class="arch-box">
+            <span class="icon">🌐</span>
+            <span class="label">ALB</span>
+            <span class="sub">HTTPS/443</span>
+          </div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box">
+            <span class="icon">📦</span>
+            <span class="label">ECS Fargate</span>
+            <span class="sub">Portal + Recon</span>
+          </div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box">
+            <span class="icon">🗄️</span>
+            <span class="label">RDS Postgres</span>
+            <span class="sub">ReportDB</span>
+          </div>
+        </div>
+        <div class="arch" style="margin-top:0.75rem; grid-template-columns:1fr 1fr 1fr;">
+          <div class="arch-box">
+            <span class="icon">🪣</span>
+            <span class="label">S3</span>
+            <span class="sub">Recon CSVs + FinSecLib locks</span>
+          </div>
+          <div class="arch-box">
+            <span class="icon">⚡</span>
+            <span class="label">Lambda</span>
+            <span class="sub">S3→ECS trigger</span>
+          </div>
+          <div class="arch-box">
+            <span class="icon">🔑</span>
+            <span class="label">Secrets Mgr</span>
+            <span class="sub">Replaces hardcoded IPs</span>
+          </div>
+        </div>
+        <p style="margin-top:0.75rem; font-size:0.75rem; color:#475569;">Local: docker compose (MinIO=S3 · Postgres=RDS · Redis=ElastiCache)</p>
+      </div>
+
+      <div class="card">
+        <h2>Challenges</h2>
+        <table>
+          <thead><tr><th>#</th><th>Challenge</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>The Memo</td><td class="done">Done</td></tr>
+            <tr><td>2</td><td>The Discovery</td><td class="done">Done</td></tr>
+            <tr><td>3</td><td>The Options</td><td class="done">Done</td></tr>
+            <tr><td>4</td><td>The Container</td><td class="done">Done</td></tr>
+            <tr><td>5</td><td>The Rewire</td><td class="partial">Partial</td></tr>
+            <tr><td>6</td><td>The Foundation (IaC)</td><td class="done">Done</td></tr>
+            <tr><td>7–10</td><td>Tests / Bill / DR / Undo</td><td class="skipped">Skipped</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Claude Code moments -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h2>How Claude Code Did the Work</h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.5rem;">
+        <div class="moment">
+          <strong style="color:#a78bfa; display:block; margin-bottom:0.2rem;">Discovery archaeology in seconds</strong>
+          The ASCII dependency map in ADR-002 — Portal → hardcoded IP → fileserver01 UNC → FinSecLib lock — would take 30+ min manually. Claude produced it from workload descriptions in one pass.
+        </div>
+        <div class="moment">
+          <strong style="color:#a78bfa; display:block; margin-bottom:0.2rem;">Dockerfiles: production patterns unprompted</strong>
+          Multi-stage build, non-root user, health check, Secrets Manager integration — Claude applied all of these without being asked. That's production-readiness, not scaffolding.
+        </div>
+        <div class="moment">
+          <strong style="color:#a78bfa; display:block; margin-bottom:0.2rem;">IaC gaps traceable to discovery</strong>
+          Prompted Claude to "make the Terraform gaps reference the ADR-002 findings." Result: <code># TODO ... Track in JIRA CLOUD-17/42</code> in the RDS and S3 resources. Decisions and infra stay in sync.
+        </div>
+        <div class="moment">
+          <strong style="color:#a78bfa; display:block; margin-bottom:0.2rem;">Played every role</strong>
+          PM (memo), Architect (options), Dev (containers), Infra (Terraform) — Claude switched context per challenge with no context loss. One engineer, six roles, 60 minutes.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div>Team 1 — Contoso Cloud Migration &nbsp;|&nbsp; Scenario 2</div>
+      <div>APAC Claude Code Workshop &nbsp;|&nbsp; Hackathon Submission</div>
+    </div>
+
+  </div>
+</body>
+</html>
