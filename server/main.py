@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
-from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
+from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders, restock_orders
 
 app = FastAPI(title="Factory Inventory Management System")
 
@@ -89,6 +89,7 @@ class DemandForecast(BaseModel):
     forecasted_demand: int
     trend: str
     period: str
+    unit_cost: float
 
 class BacklogItem(BaseModel):
     id: str
@@ -119,6 +120,23 @@ class CreatePurchaseOrderRequest(BaseModel):
     unit_cost: float
     expected_delivery_date: str
     notes: Optional[str] = None
+
+class RestockOrderItem(BaseModel):
+    sku: str
+    name: str
+    quantity: int
+    unit_cost: float
+
+class RestockOrder(BaseModel):
+    id: str
+    items: List[RestockOrderItem]
+    total_value: float
+    status: str
+    order_date: str
+    expected_delivery: str
+
+class CreateRestockOrderRequest(BaseModel):
+    items: List[RestockOrderItem]
 
 # API endpoints
 @app.get("/")
@@ -303,6 +321,31 @@ def get_monthly_trends():
     result = list(months.values())
     result.sort(key=lambda x: x['month'])
     return result
+
+@app.post("/api/restock-orders", response_model=RestockOrder, status_code=201)
+def create_restock_order(request: CreateRestockOrderRequest):
+    """Create a new restocking order from recommended items"""
+    from datetime import datetime, timedelta
+
+    order_id = f"RST-{len(restock_orders) + 1:03d}"
+    now = datetime.utcnow()
+    total_value = sum(item.quantity * item.unit_cost for item in request.items)
+
+    new_order = {
+        "id": order_id,
+        "items": [item.model_dump() for item in request.items],
+        "total_value": round(total_value, 2),
+        "status": "Submitted",
+        "order_date": now.isoformat(),
+        "expected_delivery": (now + timedelta(days=14)).isoformat()
+    }
+    restock_orders.append(new_order)
+    return new_order
+
+@app.get("/api/restock-orders", response_model=List[RestockOrder])
+def get_restock_orders():
+    """Get all submitted restock orders"""
+    return restock_orders
 
 if __name__ == "__main__":
     import uvicorn

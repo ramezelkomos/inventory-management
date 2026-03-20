@@ -74,6 +74,44 @@
           </table>
         </div>
       </div>
+
+      <div v-if="restockOrders.length > 0" class="card restock-orders-card">
+        <div class="card-header">
+          <h3 class="card-title">Submitted Restocking Orders ({{ restockOrders.length }})</h3>
+        </div>
+        <div class="table-container">
+          <table class="restock-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Items</th>
+                <th>Total Value</th>
+                <th>Status</th>
+                <th>Expected Delivery</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in restockOrders" :key="order.id">
+                <td><strong>{{ order.id }}</strong></td>
+                <td>
+                  <details class="items-details">
+                    <summary class="items-summary">{{ order.items.length }} item{{ order.items.length !== 1 ? 's' : '' }}</summary>
+                    <div class="items-dropdown">
+                      <div v-for="item in order.items" :key="item.sku" class="item-entry">
+                        <span class="item-name">{{ item.name }}</span>
+                        <span class="item-meta">{{ item.sku }} · Qty: {{ item.quantity }} @ ${{ item.unit_cost }}</span>
+                      </div>
+                    </div>
+                  </details>
+                </td>
+                <td><strong>${{ order.total_value.toLocaleString() }}</strong></td>
+                <td><span class="badge info">{{ order.status }}</span></td>
+                <td>{{ formatDate(order.expected_delivery) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -95,6 +133,7 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const orders = ref([])
+    const restockOrders = ref([])
 
     // Use shared filters
     const {
@@ -153,7 +192,18 @@ export default {
       })
     }
 
-    onMounted(loadOrders)
+    const loadRestockOrders = async () => {
+      try {
+        restockOrders.value = await api.getRestockOrders()
+      } catch (err) {
+        console.error('Failed to load restock orders:', err)
+      }
+    }
+
+    onMounted(() => {
+      loadOrders()
+      loadRestockOrders()
+    })
 
     return {
       t,
@@ -165,7 +215,8 @@ export default {
       formatDate,
       currencySymbol,
       translateProductName,
-      translateCustomerName
+      translateCustomerName,
+      restockOrders
     }
   }
 }
@@ -275,5 +326,14 @@ export default {
 .item-meta {
   font-size: 0.813rem;
   color: #64748b;
+}
+
+.restock-orders-card {
+  margin-top: 1.25rem;
+}
+
+.restock-table {
+  table-layout: fixed;
+  width: 100%;
 }
 </style>
